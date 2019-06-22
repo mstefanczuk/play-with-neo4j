@@ -1,0 +1,50 @@
+1. MATCH (hugo:Person {name: "Hugo Weaving"})-[:ACTED_IN]->(hugoWeavingMovies) RETURN hugo,hugoWeavingMovies
+2. MATCH (hugo:Person {name: "Hugo Weaving"})-[:ACTED_IN]->(hugoWeavingMovies)<-[:DIRECTED]-(directors) RETURN hugoWeavingMovies,directors
+3. MATCH (hugo:Person {name: "Hugo Weaving"})-[:ACTED_IN]->(hugoWeavingMovies)<-[:ACTED_IN]-(coActors) RETURN hugo,hugoWeavingMovies,coActors
+4. MATCH (actor:Person)-[:ACTED_IN]->(movies) WITH actor,count(movies) AS moviesNumber RETURN actor.name,moviesNumber
+5. MATCH (person:Person)-[:DIRECTED]->(movies)<-[:WROTE]-(person) RETURN person.name,movies.title
+6. MATCH (hugo:Person {name:"Hugo Weaving"})-[:ACTED_IN]->(movies)<-[:ACTED_IN]-(keanu:Person {name:"Keanu Reeves"}) RETURN movies.title
+7.
+MERGE (CaptainAmericaTheFirstAvenger:Movie {title:'Captain America: The First Avenger', released:2011, tagline:'When patriots become heroes'})
+MERGE (Joe:Person {name:'Joe Johnston', born:1950})
+MERGE (Chris:Person {name:'Chris Evans', born:1981})
+MERGE (Hugo:Person {name:'Hugo Weaving', born:1960})
+MERGE (Samuel:Person {name:'Samuel L. Jackson', born:1948})
+MERGE (Christopher:Person {name:'Christopher Markus', born:1970})
+MERGE (Stephen:Person {name:'Stephen McFeely', born:1969})
+CREATE 
+(Joe)-[:DIRECTED]->(CaptainAmericaTheFirstAvenger),
+(Chris)-[:ACTED_IN {roles:['Captain America']}]->(CaptainAmericaTheFirstAvenger),
+(Hugo)-[:ACTED_IN {roles:['Johann Schmidt']}]->(CaptainAmericaTheFirstAvenger),
+(Samuel)-[:ACTED_IN {roles:['Nick Fury']}]->(CaptainAmericaTheFirstAvenger),
+(Christopher)-[:WROTE]->(CaptainAmericaTheFirstAvenger),
+(Stephen)-[:WROTE]->(CaptainAmericaTheFirstAvenger)
+
+MATCH (people:Person)-[relatedTo]-(movie:Movie {title: "Captain America: The First Avenger"}) RETURN movie, people, Type(relatedTo), relatedTo
+
+8. MATCH path = (t:town{name:'Darjeeling'})-[*]->(p:peak{name:'Sandakphu'}) RETURN path
+9. MATCH path = shortestPath((t:town{name:'Darjeeling'})-[*..9]->(p:peak{name:'Sandakphu'})) RETURN path
+10. MATCH path = shortestPath((t:town{name:'Darjeeling'})-[*..9]->(p:peak{name:'Sandakphu'})) 
+WHERE ALL (rel IN RELATIONSHIPS(path) WHERE rel.winter = 'true')
+RETURN path
+11. MATCH path = (t:town{name:'Darjeeling'})-[*]->(p:peak{name:'Sandakphu'}) 
+WITH path, relationships(path) 
+AS rel 
+RETURN path, REDUCE(distance = 0, r IN rel | distance + r.distance) AS totalDistance 
+ORDER BY totalDistance
+12. MATCH path = (t:town{name:'Darjeeling'})-[:twowheeler* {summer: 'true'}]->() RETURN path
+13. MATCH path = (t:town{name:'Darjeeling'})-[:twowheeler* {summer: 'true'}]->(m) RETURN m
+14. MATCH (f:Flight)-[:ORIGIN]->(a:Airport) WITH a, COUNT(a) AS flightsNumber RETURN a, flightsNumber ORDER BY flightsNumber
+15. 
+Utworzenie pomocnicznej relacji: 
+MATCH (a1:Airport)<-[:ORIGIN]-(f:Flight)-[:DESTINATION]->(a2:Airport), (f)<-[:ASSIGN]-(t:Ticket) CREATE (a1)-[:CONNECT {class: t.class, price: t.price, airline: f.airline}]->(a2)
+Zapytanie do wyniku:
+MATCH p = (LAX:Airport {name: 'LAX'})-[:CONNECT*..3]->(airports) WITH airports, relationships(p) AS con WHERE REDUCE(price = 0, x IN con | price + x.price) < 3000 RETURN DISTINCT airports
+16. MATCH p = (a:Airport {name: "LAX"})-[:CONNECT*..3]->(:Airport {name: "DAY"}) WITH p, relationships(p) AS con RETURN p, REDUCE (price = 0, c in con | price + c.price) as totalPrice ORDER BY totalPrice
+17. MATCH p = (a:Airport {name: "LAX"})-[:CONNECT*..3]->(:Airport {name: "DAY"}) WITH p, relationships(p) AS con RETURN p, REDUCE (price = 0, c in con | price + c.price) as totalPrice ORDER BY totalPrice LIMIT 1
+18. MATCH p = (a:Airport {name: "LAX"})-[:CONNECT*..3 {class: 'business'}]->(:Airport {name: "DAY"}) WITH p, relationships(p) AS con RETURN p, REDUCE (price = 0, c in con | price + c.price) as totalPrice ORDER BY totalPrice LIMIT 1
+19. MATCH (a:Airport)-[]-(f:Flight) RETURN DISTINCT f.airline, COUNT(DISTINCT a.name) ORDER BY COUNT(DISTINCT a.name)
+20.
+MATCH p = (a1:Airport)-[c1:CONNECT]->(a2:Airport)-[c2:CONNECT]->(a3:Airport) 
+WHERE a1.name <> a2.name AND a1.name <> a3.name AND a2.name <> a3.name
+WITH p, relationships(p) AS con RETURN p, REDUCE (price = 0, c in con | price + c.price) as totalPrice ORDER BY totalPrice LIMIT 1
